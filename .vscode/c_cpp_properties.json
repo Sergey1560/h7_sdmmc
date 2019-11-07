@@ -1,0 +1,25 @@
+{
+    "configurations": [
+        {
+            "name": "vscode_stm32_c_cpp_properties",
+            "compilerPath": "~/soft/gcc-arm-none-eabi-8-2018-q4-major/bin/arm-none-eabi-gcc",
+            "includePath": [
+                "${workspaceFolder}/Lib/CMSIS/inc",
+                "${workspaceFolder}/Lib/CMSIS/src",
+                "${workspaceFolder}/src",
+                "${workspaceFolder}/Lib/Mylib",
+                "${workspaceFolder}/Lib/Segger",
+                "${workspaceFolder}/Lib/FATFs",
+                "${workspaceFolder}/Lib/FATFs/conf",
+                "${workspaceFolder}/Lib/fonts"
+            ],
+            "defines": [
+                "STM32H743xx"
+            ],
+            "cStandard": "c11",
+            "cppStandard": "c++17",
+            "intelliSenseMode": "gcc-x64"
+        }
+    ],
+    "version": 4
+}

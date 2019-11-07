@@ -1,0 +1,64 @@
+{
+    // See https://go.microsoft.com/fwlink/?LinkId=733558
+    // for the documentation about the tasks.json format
+    "version": "2.0.0",
+    "tasks": [
+        {
+                "label": "Build",
+                "type": "shell",
+                "group": "build",
+                "command": "make",
+                "problemMatcher": [
+                    "$gcc"
+                ]
+            },
+            {
+                "label": "Clean",
+                "type": "shell",
+                "group": "build",
+                "command": "make clean",
+                "problemMatcher": [
+                    "$gcc"
+                ]
+            },
+            {
+                "label": "Flash ST",
+                "type": "shell",
+                "group": "build",
+                "command": "~/soft/STMicroelectronics/STM32CubeProgrammer/bin/STM32_Programmer_CLI -c port=SWD reset=HWrst -d build/sdram.elf -rst",
+                "problemMatcher": [
+                    "$gcc"
+                ]
+        },
+            {
+                "label": "Flash OpenOCD",
+                "type": "shell",
+                "group": "build",
+                "command": "openocd -f interface/stlink-v2.cfg -f target/stm32f4x.cfg -c \"init\" -c \"reset init\" -c \"flash write_image erase build/lcd.hex\" -c \"reset\" -c \"shutdown\"",
+                "problemMatcher": [
+                    "$gcc"
+                ]
+        },
+        {
+            "label": "Ozone",
+            "type": "shell",
+            "group": "build",
+            "command": "Ozone ./ozone.jdebug",
+            "problemMatcher": [
+                "$gcc"
+            ]
+    },
+    {
+        "label": "Flash J-link",
+        "type": "shell",
+        "group": "build",
+        "command": "JLinkExe -device \"STM32H743II\" -if SWD -speed 4000 -autoconnect 1 -CommanderScript ./jlink.cmd",
+        "problemMatcher": [
+            "$gcc"
+        ]
+}
+
+    
+
+    ]
+}
