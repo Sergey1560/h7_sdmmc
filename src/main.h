@@ -9,6 +9,6 @@
 #include "ff.h"
 
 #define DATA_SIZE 70*1024
-#define WRITE_COUNT 30
+#define WRITE_COUNT 255
 
 #endif

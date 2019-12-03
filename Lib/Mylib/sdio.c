@@ -120,11 +120,13 @@ uint32_t SD_transfer(uint8_t *buf, uint32_t blk, uint32_t cnt, uint32_t dir){
 		SCB_CleanDCache_by_Addr((uint32_t*)(alignedAddr + cnt*512), 32);
 	};
 */	
-		SCB_CleanDCache_by_Addr((uint32_t*)alignedAddr, 32);
-		SCB_CleanDCache_by_Addr((uint32_t*)(alignedAddr + cnt*512), 32);
-		if (dir==UM2SD){ //Запись, сбросить из кэша весь буфер 
-			SCB_CleanDCache_by_Addr((uint32_t *)alignedAddr,cnt*512+((uint32_t)buf - alignedAddr));
-		};
+
+		SCB_CleanDCache_by_Addr((uint32_t *)alignedAddr,cnt*512+((uint32_t)buf - alignedAddr));
+		// SCB_CleanDCache_by_Addr((uint32_t*)alignedAddr, 32);
+		// SCB_CleanDCache_by_Addr((uint32_t*)(alignedAddr + cnt*512), 32);
+		// if (dir==UM2SD){ //Запись, сбросить из кэша весь буфер 
+		// 	SCB_CleanDCache_by_Addr((uint32_t *)alignedAddr,cnt*512+((uint32_t)buf - alignedAddr));
+		// };
 
 	#endif
 
