@@ -84,6 +84,10 @@ void RCC_init(void){
     RCC->CFGR |= RCC_CFGR_SW_PLL1;
 	while ((RCC->CFGR & RCC_CFGR_SWS) != RCC_CFGR_SWS_PLL1) {};
     
+	#ifdef ENABLE_DCACHE
+	SCB_EnableICache();
+	SCB_EnableDCache();
+	#endif
 
 	SystemCoreClockUpdate();
     INFO("RCC init, SystemCoreClock %d",SystemCoreClock);

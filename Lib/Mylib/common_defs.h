@@ -6,7 +6,7 @@
 #include "mem2mem.h"
 #include "clocks.h"
 
-//#define ENABLE_DCACHE 1
+#define ENABLE_DCACHE 1
 
 #define CCMRAM __attribute__((section(".ccmram")))
 #define RAM_D1 __attribute__((section(".ram_d1")))

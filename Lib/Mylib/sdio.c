@@ -104,11 +104,28 @@ uint32_t SD_transfer(uint8_t *buf, uint32_t blk, uint32_t cnt, uint32_t dir){
 	SDIO->MASK=0;
 	
 	#ifdef ENABLE_DCACHE 
+	/*
+	Буфер в структуре FATFs не выровнен на 32 байта (для SCB_CleanDCache). При
+	операции SCB_InvalidateDCache данные в строке кэша рядом с началом и концом
+	буфера могут быть испорчены. Для этого сначала сброс этих строк в память, чтобы
+	потом Invalidate был с правильными данными
+	https://community.st.com/s/question/0D50X00009XkWmR/sd-card-memory-corruption-due-to-overly-aggressive-cache-maintenance
+	*/
 	alignedAddr = (uint32_t)buf & ~0x1F;
-	SCB_CleanDCache_by_Addr((uint32_t*)alignedAddr, 32);
-	SCB_CleanDCache_by_Addr((uint32_t*)(alignedAddr + cnt*512), 32);
-	SCB_CleanDCache_by_Addr((uint32_t *)alignedAddr,cnt*512);
-	//SCB_CleanDCache();
+/*
+	if (dir==UM2SD){ //Запись, сбросить из кэша весь буфер 
+		SCB_CleanDCache_by_Addr((uint32_t *)alignedAddr,cnt*512+((uint32_t)buf - alignedAddr));
+	}else{ //Чтение, сбросить из кэша первую и последнюю строку
+		SCB_CleanDCache_by_Addr((uint32_t*)alignedAddr, 32);
+		SCB_CleanDCache_by_Addr((uint32_t*)(alignedAddr + cnt*512), 32);
+	};
+*/	
+		SCB_CleanDCache_by_Addr((uint32_t*)alignedAddr, 32);
+		SCB_CleanDCache_by_Addr((uint32_t*)(alignedAddr + cnt*512), 32);
+		if (dir==UM2SD){ //Запись, сбросить из кэша весь буфер 
+			SCB_CleanDCache_by_Addr((uint32_t *)alignedAddr,cnt*512+((uint32_t)buf - alignedAddr));
+		};
+
 	#endif
 
 	SD_Cmd(cmd, blk, SDIO_RESP_SHORT, (uint32_t*)response);
@@ -128,10 +145,7 @@ uint32_t SD_transfer(uint8_t *buf, uint32_t blk, uint32_t cnt, uint32_t dir){
 
 	#ifdef ENABLE_DCACHE 
 	if(dir==SD2UM) { //Read
-		SCB_CleanDCache_by_Addr((uint32_t*)alignedAddr, 32);
-		SCB_CleanDCache_by_Addr((uint32_t*)(alignedAddr + cnt*512), 32);
-		SCB_InvalidateDCache_by_Addr((uint32_t *)alignedAddr,cnt*512);
-		//SCB_InvalidateDCache();
+		SCB_InvalidateDCache_by_Addr((uint32_t *)alignedAddr,cnt*512 + ((uint32_t)buf - alignedAddr));
 	};
 	#endif
 
