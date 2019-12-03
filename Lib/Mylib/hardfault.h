@@ -1,6 +1,6 @@
 #ifndef HARD_H
 #define HARD_H
-#include "stm32f4xx.h"
+#include "stm32h7xx.h"
 #include <stdio.h>
 #include <string.h>
 

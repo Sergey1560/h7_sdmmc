@@ -2,6 +2,7 @@
     "cortex-debug.armToolchainPath": "/home/sergey/soft/gcc-arm-none-eabi-8-2018-q4-major/bin",
     "cortex-debug.openocdPath": "/usr/bin/openocd",
     "files.associations": {
-        "main.h": "c"
+        "main.h": "c",
+        "mpu.h": "c"
     },
 }

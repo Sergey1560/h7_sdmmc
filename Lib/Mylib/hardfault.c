@@ -1,5 +1,7 @@
 #include "hardfault.h"
 
+uint8_t hf_exit = 0;
+ 
 // hard fault handler in C,
 // with stack frame location as input parameter
 // called from HardFault_Handler in file xxx.s
@@ -59,7 +61,9 @@ void __attribute__((optimize("O0"))) hard_fault_handl_c (unsigned int * hardfaul
   printf ("AFSR = %lx\n", (*((volatile unsigned long *)(0xE000ED3C))));
   printf ("SCB_SHCSR = %lx\n", SCB->SHCSR);
   
-  while (1);
+  while (!hf_exit){
+    __NOP();
+  };
 }
 
 

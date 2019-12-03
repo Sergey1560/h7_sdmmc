@@ -12,7 +12,7 @@ volatile uint8_t state=0;    //Для хранения состояния кар
 volatile uint32_t response[4]; //Для хранения ответа от карты
 volatile uint32_t sta_reg=0;
 
-volatile uint8_t ALGN4 buf_copy[TMP_BUF_SIZE];
+//volatile uint8_t ALGN4 buf_copy[TMP_BUF_SIZE];
 
 void SD_parse_CSD(uint32_t* reg){
 	uint32_t tmp;
@@ -58,15 +58,14 @@ uint8_t SD_Cmd(uint8_t cmd, uint32_t arg, uint16_t response_type, uint32_t *resp
 
 
 uint32_t SD_transfer(uint8_t *buf, uint32_t blk, uint32_t cnt, uint32_t dir){
-
-	volatile uint8_t cmd=0;
+	uint32_t alignedAddr;
+	uint8_t cmd=0;
 
 	trials=SDIO_DATA_TIMEOUT;
 	while (transmit && trials--) {};
 	if(!trials) {
 		return 1;
 		}
-
 
 	state=0;
 	while(state != 4){ //Дождаться когда карта будет в режиме tran (4)
@@ -83,31 +82,38 @@ uint32_t SD_transfer(uint8_t *buf, uint32_t blk, uint32_t cnt, uint32_t dir){
 			} 
 	else if (dir==SD2UM){ //Чтение
 				cmd=(cnt == 1)? SD_CMD17 : SD_CMD18;
-			};
+			}
+	else{
+		ERROR("Unknown dir %d",dir);
+		return 210;
+	};
 
 	//Настройка DMA
 	if(((uint32_t)buf % 4) != 0){
-		ERROR("Write buffer not alligned ");
-		memcpy((uint8_t*)buf_copy,buf,cnt*512);
-		SDMMC1->IDMABASE0 = (uint32_t)buf_copy;
-	}else{
-		SDMMC1->IDMABASE0 = (uint32_t)buf;
+		ERROR("Buffer not alligned ");
+		return 200;
 	}	
 	transmit=1;
 	error_flag=0;
+	
+	SDMMC1->IDMABASE0 = (uint32_t)buf;
 
 	SDIO->DTIMER=(uint32_t)SDIO_DATA_R_TIMEOUT;
 	SDIO->DLEN=cnt*512;    //Количество байт (блок 512 байт)
 	SDIO->DCTRL= SDIO_DCTRL | (dir & SDMMC_DCTRL_DTDIR);  //Direction. 0=Controller to card, 1=Card to Controller
 	SDIO->MASK=0;
-	SDIO->ICR=SDIO_ICR_STATIC;
 	
+	#ifdef ENABLE_DCACHE 
+	alignedAddr = (uint32_t)buf & ~0x1F;
+	SCB_CleanDCache_by_Addr((uint32_t*)alignedAddr, 32);
+	SCB_CleanDCache_by_Addr((uint32_t*)(alignedAddr + cnt*512), 32);
+	SCB_CleanDCache_by_Addr((uint32_t *)alignedAddr,cnt*512);
+	//SCB_CleanDCache();
+	#endif
+
 	SD_Cmd(cmd, blk, SDIO_RESP_SHORT, (uint32_t*)response);
 	
-	//Start DMA
-	#ifdef ENABLE_DCACHE 
-	SCB_CleanDCache();
-	#endif
+	SDIO->ICR=SDIO_ICR_STATIC;
 	SDMMC1->IDMACTRL |= 1;
 	SDIO->DCTRL|=1; //DPSM is enabled
 
@@ -119,17 +125,15 @@ uint32_t SD_transfer(uint8_t *buf, uint32_t blk, uint32_t cnt, uint32_t dir){
 		SDIO->ICR = SDIO_ICR_STATIC;
 		return error_flag;
 	}
-	
-	if(dir==SD2UM) { //Read
-		#ifdef ENABLE_DCACHE 
-		SCB_InvalidateDCache();
-		#endif
-		if(((uint32_t)buf % 4) != 0){
-			ERROR("Read buffer not alligned ");
-			memcpy(buf,(uint8_t*)buf_copy,cnt*512);
-		}
 
+	#ifdef ENABLE_DCACHE 
+	if(dir==SD2UM) { //Read
+		SCB_CleanDCache_by_Addr((uint32_t*)alignedAddr, 32);
+		SCB_CleanDCache_by_Addr((uint32_t*)(alignedAddr + cnt*512), 32);
+		SCB_InvalidateDCache_by_Addr((uint32_t *)alignedAddr,cnt*512);
+		//SCB_InvalidateDCache();
 	};
+	#endif
 
 	if(multiblock > 0) {
 		SD_Cmd(SD_CMD12, 0, SDIO_RESP_SHORT, (uint32_t*)response);
@@ -184,7 +188,7 @@ uint8_t SD_Init(void) {
 		return 8;
 	};
 
-	trials = 0x0000FFFF;
+	trials = 0x0000000F;
 	while (--trials) {
 			SD_Cmd(SD_CMD55, 0 ,SDIO_RESP_SHORT,(uint32_t*)response); // CMD55 with RCA 0   R1
 			SD_check_status((SD_Status_TypeDef*)&SDStatus,(uint32_t*)&response[0]);

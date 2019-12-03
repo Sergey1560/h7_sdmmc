@@ -55,8 +55,8 @@ ENTRY(Reset_Handler)
 /* Highest address of the user mode stack */
 _estack = 0x20020000;    /* end of RAM */
 /* Generate a link error if heap and stack don't fit into RAM */
-_Min_Heap_Size = 0x200;      /* required amount of heap  */
-_Min_Stack_Size = 0x400; /* required amount of stack */
+_Min_Heap_Size = 0x0;      /* required amount of heap  */
+_Min_Stack_Size = 0x1000; /* required amount of stack */
 
 /* Specify the memory areas */
 MEMORY
@@ -161,7 +161,6 @@ _siram_d1 = LOADADDR(.ram_d1);
     _eram_d1 = .;       /* create a global symbol at ccmram end */
   } >RAM_D1 AT> FLASH
 
-
 _siram_d2 = LOADADDR(.ram_d2);
   .ram_d2 :
   {
@@ -173,6 +172,21 @@ _siram_d2 = LOADADDR(.ram_d2);
     . = ALIGN(4);
     _eram_d2 = .;       /* create a global symbol at ccmram end */
   } >RAM_D2 AT> FLASH
+
+
+_siram_d3 = LOADADDR(.ram_d3);
+  .ram_d3 :
+  {
+    . = ALIGN(4);
+    _sram_d3 = .;       /* create a global symbol at ccmram start */
+    *(.ram_d3)
+    *(.ram_d3*)
+    
+    . = ALIGN(4);
+    _eram_d3 = .;       /* create a global symbol at ccmram end */
+  } >RAM_D3 AT> FLASH
+
+
 
 _siitcm = LOADADDR(.itcm);
   .itcm :

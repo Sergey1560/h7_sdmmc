@@ -9,24 +9,41 @@ FATFS FATFS_Obj;
 
 uint8_t ALGN4 data[DATA_SIZE]; 
 uint32_t clk_count;
+
 uint32_t data_size=0;
 uint32_t sd_speed=0;
 
+BYTE work[FF_MAX_SS];
+
+uint8_t r=0;
+
 int main(void){
+	
+
+//	while(r < 1){__NOP();}
 
 	INFO("System start");
+
 	#ifdef ENABLE_DCACHE
 	SCB_EnableICache();
 	SCB_EnableDCache();
 	#endif
 
 	RCC_init();
+	//MPU_Config();	
 
+	result = f_mkfs("", FM_FAT, 32768, work, sizeof work);
+	
 	result = f_mount((FATFS *)&FATFS_Obj, "0", 1);
 	if(result != FR_OK){
 		ERROR("f_mount fail: %d",result);
 		while(1);
 		};
+
+	
+
+
+	for(uint32_t i=0; i<0x1000; i++){__NOP();}
 
 	result = f_open((FIL*)&file, "test_file.txt", FA_CREATE_ALWAYS | FA_WRITE);
 	if(result != FR_OK) {
@@ -62,7 +79,7 @@ int main(void){
 	}
 	
 	sd_speed = data_size*1000/dwt_get_diff_sec(clk_count);
-	INFO("Write to file done in %d ms, speed %ld byte/sec", dwt_get_diff_sec(clk_count),sd_speed);
+	INFO("Write to file done in %d bytes in %d ms, speed %ld byte/sec", data_size, dwt_get_diff_sec(clk_count),sd_speed);
 
 	/* Чтение обратно, проверка записанного */
 

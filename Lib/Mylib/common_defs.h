@@ -4,12 +4,14 @@
 #include "log.h"
 #include "dwt.h"
 #include "mem2mem.h"
+#include "clocks.h"
 
-#define ENABLE_DCACHE 1
+//#define ENABLE_DCACHE 1
 
 #define CCMRAM __attribute__((section(".ccmram")))
 #define RAM_D1 __attribute__((section(".ram_d1")))
 #define RAM_D2 __attribute__((section(".ram_d2")))
+#define RAM_D3 __attribute__((section(".ram_d3")))
 #define ITCM __attribute__((section(".itcm")))
 #define DTCM __attribute__((section(".dtcm")))
 

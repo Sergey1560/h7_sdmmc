@@ -2,6 +2,7 @@
 #define MPU_H
 #include "common_defs.h"
 
+
 #if (__MPU_PRESENT == 1)
 /** @defgroup CORTEX_MPU_HFNMI_PRIVDEF_Control MPU HFNMI and PRIVILEGED Access control
   * @{

@@ -28,6 +28,7 @@ Lib/FATFs/ff.c \
 Lib/FATFs/ffsystem.c \
 Lib/FATFs/ffunicode.c \
 Lib/Mylib/mem2mem.c \
+Lib/Mylib/hardfault.c \
 Lib/Segger/SEGGER_RTT_printf.c \
 Lib/Segger/SEGGER_RTT_Syscalls_GCC.c \
 Lib/Segger/SEGGER_RTT.c \
@@ -39,7 +40,7 @@ Startup/startup_stm32h743xx.s \
 Lib/Segger/SEGGER_RTT_ASM_ARMv7M.s
 
 
-GCC_PATH = /home/sergey/soft/gcc-arm-none-eabi-8-2019-q3-update/bin
+GCC_PATH = /home/sergey/soft/gcc-arm-none-eabi-9-2019-q4-major/bin
 
 #######################################
 # binaries

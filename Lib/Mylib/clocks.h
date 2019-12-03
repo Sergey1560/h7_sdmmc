@@ -5,43 +5,17 @@
 
 #define STM32H743
 
-#define RCC_HSE 16000000
+#define CLOCKS_480 0
+#define CLOCKS_400 1
 
-/* Источник PLL */
-#define PLL_HSE 2
-#define PLL_HSI 0
-#define PLL_SRC PLL_HSE
+#if CLOCKS_480
+#include "clocks_480.h"
+#endif
 
-/* Основные настройки тактирования */
-#define RCC_DIVM1 1
-#define RCC_DIVM2 1
-#define RCC_DIVM3 1
+#if CLOCKS_400
+#include "clocks_400.h"
+#endif
 
-/* PLL1 */
-#define PLL_DIVR1 2
-#define PLL_DIVQ1 20
-#define PLL_DIVP1 2
-#define PLL_DIVN1 60
-#define PLL_FRACN1 0
-/* PLL2 */
-#define PLL_DIVR2 1
-#define PLL_DIVQ2 1
-#define PLL_DIVP2 2
-#define PLL_DIVN2 9
-#define PLL_FRACN2 3072
-/* PLL3 */
-#define PLL_DIVR3 3
-#define PLL_DIVQ3 2
-#define PLL_DIVP3 2
-#define PLL_DIVN3 6
-#define PLL_FRACN3 0
-
-#define RCC_D1CPRE 0
-
-
-/* Тактирование шин */
-#define APB1_CLK 120000000UL
-#define APB2_CLK 120000000UL
 
 /* Тактирование таймеров */
 #define APB1_TIMER_CLK 2*APB1_CLK
