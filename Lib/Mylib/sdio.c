@@ -112,21 +112,22 @@ uint32_t SD_transfer(uint8_t *buf, uint32_t blk, uint32_t cnt, uint32_t dir){
 	https://community.st.com/s/question/0D50X00009XkWmR/sd-card-memory-corruption-due-to-overly-aggressive-cache-maintenance
 	*/
 	alignedAddr = (uint32_t)buf & ~0x1F;
-/*
+
 	if (dir==UM2SD){ //Запись, сбросить из кэша весь буфер 
 		SCB_CleanDCache_by_Addr((uint32_t *)alignedAddr,cnt*512+((uint32_t)buf - alignedAddr));
+//		DEBUG("[W] Buf: %X, Cnt %d, Clean from %X to %X Delta %d",(uint32_t)buf,cnt,alignedAddr,cnt*512+(uint32_t)buf,(uint32_t)buf - alignedAddr);
 	}else{ //Чтение, сбросить из кэша первую и последнюю строку
-		SCB_CleanDCache_by_Addr((uint32_t*)alignedAddr, 32);
-		SCB_CleanDCache_by_Addr((uint32_t*)(alignedAddr + cnt*512), 32);
-	};
-*/	
-
+		/* Должно быть достаточно очистки только двух строк, но иногда
+		на чтении портится память кусками по 32 байта. Очистка всего буфера
+		перед чтением решает проблему
+		*/
+		//SCB_CleanDCache_by_Addr((uint32_t*)alignedAddr, 32);
+		//SCB_CleanDCache_by_Addr((uint32_t*)(alignedAddr + cnt*512), ((uint32_t)buf - alignedAddr));
 		SCB_CleanDCache_by_Addr((uint32_t *)alignedAddr,cnt*512+((uint32_t)buf - alignedAddr));
-		// SCB_CleanDCache_by_Addr((uint32_t*)alignedAddr, 32);
-		// SCB_CleanDCache_by_Addr((uint32_t*)(alignedAddr + cnt*512), 32);
-		// if (dir==UM2SD){ //Запись, сбросить из кэша весь буфер 
-		// 	SCB_CleanDCache_by_Addr((uint32_t *)alignedAddr,cnt*512+((uint32_t)buf - alignedAddr));
-		// };
+//		DEBUG("[R] Buf: %X, Cnt %d Cl %X +32, %X + %d",(uint32_t)buf,cnt,alignedAddr,alignedAddr+cnt*512,(uint32_t)buf - alignedAddr);
+	};
+	
+		
 
 	#endif
 
@@ -148,6 +149,7 @@ uint32_t SD_transfer(uint8_t *buf, uint32_t blk, uint32_t cnt, uint32_t dir){
 	#ifdef ENABLE_DCACHE 
 	if(dir==SD2UM) { //Read
 		SCB_InvalidateDCache_by_Addr((uint32_t *)alignedAddr,cnt*512 + ((uint32_t)buf - alignedAddr));
+		//DEBUG("Invalidate %X to %X (%X bytes)",alignedAddr,cnt*512 + (uint32_t)buf,cnt*512 + ((uint32_t)buf - alignedAddr));
 	};
 	#endif
 

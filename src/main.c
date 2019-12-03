@@ -13,28 +13,15 @@ uint32_t clk_count;
 uint32_t data_size=0;
 float sd_speed;
 
-BYTE work[FF_MAX_SS];
-
-uint8_t r;
-
 int main(void){
-
-	
 	INFO("System start");
-
 	RCC_init();
-	//MPU_Config();	
 
 	result = f_mount((FATFS *)&FATFS_Obj, "0", 1);
 	if(result != FR_OK){
 		ERROR("f_mount fail: %d",result);
 		while(1);
 		};
-
-
-	while(r != 55){__NOP();}
-
-	result = f_unlink("test_file.txt");
 
 	result = f_open((FIL*)&file, "test_file.txt", FA_CREATE_ALWAYS | FA_WRITE);
 	if(result != FR_OK) {

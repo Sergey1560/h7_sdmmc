@@ -4,7 +4,6 @@
 #include "rcc.h"
 #include <stdio.h>
 #include <string.h>
-#include "mpu.h"
 #include "sdio.h"
 #include "ff.h"
 

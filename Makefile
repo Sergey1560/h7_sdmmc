@@ -5,7 +5,7 @@ TARGET = firmware
 # debug build?
 DEBUG = 1
 # optimization
-OPT = -O0
+OPT = -O2
 
 #######################################
 # paths
@@ -20,7 +20,6 @@ BUILD_DIR = build
 C_SOURCES =  \
 src/main.c \
 Lib/Mylib/rcc.c \
-Lib/Mylib/mpu.c \
 Lib/Mylib/dwt.c \
 Lib/Mylib/sdio.c \
 Lib/FATFs/conf/diskio.c \
