@@ -25,16 +25,7 @@
                 "label": "Flash ST",
                 "type": "shell",
                 "group": "build",
-                "command": "~/soft/STMicroelectronics/STM32CubeProgrammer/bin/STM32_Programmer_CLI -c port=SWD reset=HWrst -d build/sdram.elf -rst",
-                "problemMatcher": [
-                    "$gcc"
-                ]
-        },
-            {
-                "label": "Flash OpenOCD",
-                "type": "shell",
-                "group": "build",
-                "command": "openocd -f interface/stlink-v2.cfg -f target/stm32f4x.cfg -c \"init\" -c \"reset init\" -c \"flash write_image erase build/lcd.hex\" -c \"reset\" -c \"shutdown\"",
+                "command": "~/soft/STMicroelectronics/STM32CubeProgrammer/bin/STM32_Programmer_CLI -c port=SWD reset=HWrst -d build/firmware.elf -rst",
                 "problemMatcher": [
                     "$gcc"
                 ]
