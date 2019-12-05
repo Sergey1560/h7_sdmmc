@@ -12,6 +12,8 @@ volatile uint8_t state=0;    //Для хранения состояния кар
 volatile uint32_t response[4]; //Для хранения ответа от карты
 volatile uint32_t sta_reg=0;
 
+volatile uint8_t ALGN32 CCCR[512]; 
+
 //volatile uint8_t ALGN4 buf_copy[TMP_BUF_SIZE];
 
 void SD_parse_CSD(uint32_t* reg){
@@ -57,9 +59,11 @@ uint8_t SD_Cmd(uint8_t cmd, uint32_t arg, uint16_t response_type, uint32_t *resp
 }
 
 
-uint32_t SD_transfer(uint8_t *buf, uint32_t blk, uint32_t cnt, uint32_t dir){
+uint32_t ITCM SD_transfer(uint8_t *buf, uint32_t blk, uint32_t cnt, uint32_t dir){
 	uint32_t alignedAddr;
 	uint8_t cmd=0;
+	SEGGER_SYSVIEW_OnUserStart(20);
+	SEGGER_SYSVIEW_RecordVoid(37);
 
 	trials=SDIO_DATA_TIMEOUT;
 	while (transmit && trials--) {};
@@ -157,6 +161,9 @@ uint32_t SD_transfer(uint8_t *buf, uint32_t blk, uint32_t cnt, uint32_t dir){
 		SD_Cmd(SD_CMD12, 0, SDIO_RESP_SHORT, (uint32_t*)response);
 	};
 	transmit=0;		
+
+	SEGGER_SYSVIEW_RecordEndCall(37);
+	SEGGER_SYSVIEW_OnUserStop(20);
 	return 0;	
 };
 
@@ -288,6 +295,7 @@ uint8_t SD_Init(void) {
 
 		#if (SDIO_HIGH_SPEED != 0)
 			SD_HighSpeed();
+			//SDIO->CLKCR|=(1 << SDMMC_CLKCR_BUSSPEED_Pos);	
 		#endif
 #else
 		tempreg=0;  
@@ -373,79 +381,48 @@ void SDIO_gpio_init(void){
 }
 
 
-// Issue SWITCH_FUNC command (CMD6)
-// input:
-//   argument - 32-bit argument for the command, refer to SD specification for description
-//   resp - pointer to the buffer for response (should be 64 bytes long)
-// return: SDResult
-// note: command response is a contents of the CCCR register (512bit or 64bytes)
 uint8_t SD_CmdSwitch(uint32_t argument, uint8_t *resp) {
-	uint32_t *ptr = (uint32_t *)resp;
 	uint8_t res = 0;
 
-	// SD specification says that response size is always 512bits,
-	// thus there is no need to set block size before issuing CMD6
-	// Clear the data flags
-	SDIO->ICR = SDIO_ICR_STATIC;
+	SDMMC1->IDMABASE0 = (uint32_t)resp;
 
-	SDIO->DTIMER = SDIO_DATA_R_TIMEOUT;
-	SDIO->DLEN = 64; 	// Data length in bytes
-	// Data transfer:
-	//   transfer mode: block
-	//   direction: to card
-	//   DMA: enabled
-	//   block size: 2^6 = 64 bytes
-	//   DPSM: enabled
-	SDIO->DCTRL = SDMMC_DCTRL_DTDIR|(6 << SDMMC_DCTRL_DBLOCKSIZE_Pos) | SDMMC_DCTRL_DTEN;
+	SDIO->DTIMER=(uint32_t)SDIO_DATA_R_TIMEOUT;
+	SDIO->DLEN=64;
+	SDIO->DCTRL= (6 << SDMMC_DCTRL_DBLOCKSIZE_Pos) | (SD2UM & SDMMC_DCTRL_DTDIR);  //Direction. 0=Controller to card, 1=Card to Controller
+	SDIO->MASK=0;
+	
+	// #ifdef ENABLE_DCACHE 
+	// SCB_CleanDCache_by_Addr((uint32_t *)resp,64);
+	// #endif
 
-	// Send SWITCH_FUNCTION command
-	// Argument:
-	//   [31]: MODE: 1 for switch, 0 for check
-	//   [30:24]: reserved, all should be '0'
-	//   [23:20]: GRP6 - reserved
-	//   [19:16]: GRP5 - reserved
-	//   [15:12]: GRP4 - power limit
-	//   [11:08]: GRP3 - driver strength
-	//   [07:04]: GRP2 - command system
-	//   [03:00]: GRP1 - access mode (a.k.a. bus speed mode)
-	//   Values for groups 6..2:
-	//     0xF: no influence
-	//     0x0: default
 	res=SD_Cmd(SD_CMD_SWITCH_FUNC, argument, SDIO_RESP_SHORT, (uint32_t*)response); // CMD6
+	
 	if (res != 0) {	
 		ERROR("CMD6 error %d",res);
 		return res; 
 		}
 
-	// Read the CCCR register value
-	while (!(SDIO->STA & (SDMMC_STA_RXOVERR | SDMMC_STA_DCRCFAIL | SDMMC_STA_DTIMEOUT | SDMMC_STA_DBCKEND| SDMMC_STA_DATAEND))) {
-		// The receive FIFO is half full, there are at least 8 words in it
-		if (SDIO->STA & SDMMC_STA_RXFIFOHF) {
-			*ptr++ = SDIO->FIFO;
-			*ptr++ = SDIO->FIFO;
-			*ptr++ = SDIO->FIFO;
-			*ptr++ = SDIO->FIFO;
-			*ptr++ = SDIO->FIFO;
-			*ptr++ = SDIO->FIFO;
-			*ptr++ = SDIO->FIFO;
-			*ptr++ = SDIO->FIFO;
-		}
+	SDIO->ICR=SDIO_ICR_STATIC;
+	SDMMC1->IDMACTRL |= 1;
+	SDIO->DCTRL|=1; //DPSM is enabled
+
+	while((SDIO->STA & (SDMMC_STA_DATAEND|SDIO_STA_ERRORS)) == 0){__NOP();};
+
+	if(SDIO->STA & SDIO_STA_ERRORS){
+		error_flag=SDIO->STA;
+		transmit=0;
+		SDIO->ICR = SDIO_ICR_STATIC;
+		return error_flag;
 	}
 
-	// Check for errors
-	if (SDIO->STA & SDIO_XFER_ERROR_FLAGS) return	1;
-	
-	// Read the data remnant from the SDIO FIFO (should not be, but just in case)
-	//while (!(SDIO->STA & SDMMC_STA_RXFIFOE)) *ptr++ = SDIO->FIFO;
-	
-	// Clear the static SDIO flags
-	SDIO->ICR = SDIO_ICR_STATIC;
+	#ifdef ENABLE_DCACHE 
+	SCB_InvalidateDCache_by_Addr((uint32_t *)resp,64);
+	#endif
 
-	return res;
+	return 0;
 }
 
 uint8_t SD_HighSpeed(void) {
-	uint8_t CCCR[64];
 	uint8_t cmd_res = 0;
 
 	// Check if the card supports HS mode
@@ -457,7 +434,7 @@ uint8_t SD_HighSpeed(void) {
 				(0xFU <<  8) | // GRP3: no influence
 				(0xFU <<  4) | // GRP2: default
 				(0x1U <<  0),  // GRP1: high speed
-				CCCR
+				(uint8_t*)CCCR
 			);
 	if (cmd_res != 0) {return cmd_res;}
 
@@ -475,9 +452,11 @@ uint8_t SD_HighSpeed(void) {
 				(0xFU <<  8) | // GRP3: no influence
 				(0xFU <<  4) | // GRP2: default
 				(0x1U <<  0),  // GRP1: high speed
-				CCCR
+				(uint8_t*)CCCR
 			);
-	if (cmd_res != 0) { return 3;}
+	if (cmd_res != 0) { 
+		return 3;
+		}
 
 	// Note: the SD specification says "card shall switch speed mode within 8 clocks
 	// after the end bit of the corresponding response"
@@ -486,3 +465,6 @@ uint8_t SD_HighSpeed(void) {
 	
 	return 0;
 }
+
+
+

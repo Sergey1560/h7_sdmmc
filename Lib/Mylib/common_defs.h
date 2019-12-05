@@ -17,6 +17,7 @@
 
 #define ALGN4 __attribute__ ((aligned (4)))
 #define ALGN8 __attribute__ ((aligned (8)))
+#define ALGN32 __attribute__ ((aligned (32)))
 
 /* GPIO SPEED */
 #define S_LOW 0

@@ -31,6 +31,8 @@ Lib/Mylib/hardfault.c \
 Lib/Segger/SEGGER_RTT_printf.c \
 Lib/Segger/SEGGER_RTT_Syscalls_GCC.c \
 Lib/Segger/SEGGER_RTT.c \
+Lib/Segger/SEGGER_SYSVIEW_Config_NoOS.c \
+Lib/Segger/SEGGER_SYSVIEW.c \
 Lib/CMSIS/src/system_stm32h7xx.c
 
 # ASM sources

@@ -7,6 +7,8 @@
 #include "sdio.h"
 #include "ff.h"
 
+#include "SEGGER_SYSVIEW.h"
+
 #define DATA_SIZE 70*1024
 #define WRITE_COUNT 255
 

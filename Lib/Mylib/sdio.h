@@ -6,13 +6,15 @@
 #include "clocks.h"
 #include "log.h"
 
+#include "SEGGER_SYSVIEW.h"
+
 //https://github.com/yigiter/Sample-STM32F4-codes/blob/master/SDIOLib/src/SDIO.c
 //https://github.com/LonelyWolf/stm32/blob/master/stm32l4-sdio/src/sdcard.c
 
 #define SDIO SDMMC1
 
 #define SDIO_4BIT_Mode		1
-#define SDIO_HIGH_SPEED 	0
+#define SDIO_HIGH_SPEED 	1
 
 #define SDIO_WAIT_WRITE		(uint8_t)1
 
@@ -193,5 +195,4 @@ uint8_t sd_get_cardsize(void);
 uint8_t SD_HighSpeed(void);
 uint8_t SD_CmdSwitch(uint32_t argument, uint8_t *resp);
 
-	
 #endif
