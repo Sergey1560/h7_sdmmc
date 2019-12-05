@@ -11,23 +11,13 @@
 //https://github.com/yigiter/Sample-STM32F4-codes/blob/master/SDIOLib/src/SDIO.c
 //https://github.com/LonelyWolf/stm32/blob/master/stm32l4-sdio/src/sdcard.c
 
-#define SDIO SDMMC1
 
 #define SDIO_4BIT_Mode		1
 #define SDIO_HIGH_SPEED 	1
 
-#define SDIO_WAIT_WRITE		(uint8_t)1
-
-#define TMP_BUF_SIZE	(1024*33)    //SD Transfer copy buffer
-
-#define GPIO_SPEED_LO (uint32_t)0
-#define GPIO_SPEED_MI (uint32_t)1
-#define GPIO_SPEED_HI (uint32_t)2
-#define GPIO_SPEED_VH (uint32_t)3
-
-#define SDIO_GPIO_DATA_SPEED  GPIO_SPEED_VH
-#define SDIO_GPIO_CMD_SPEED  GPIO_SPEED_VH
-#define SDIO_GPIO_CLK_SPEED  GPIO_SPEED_VH
+#define SDIO_GPIO_DATA_SPEED  S_VH
+#define SDIO_GPIO_CMD_SPEED  S_VH
+#define SDIO_GPIO_CLK_SPEED  S_VH
 
 
 #define UM2SD         (0x00)  //Transfer Direction
@@ -55,70 +45,27 @@
 #define SD_CMD6        ((uint8_t)6)
 #define SD_CMD7        ((uint8_t)7)
 #define SD_CMD9        ((uint8_t)9)
-
 #define SD_CMD12        ((uint8_t)12)
 #define SD_CMD13        ((uint8_t)13)
-
 #define SD_CMD_SET_BLOCKLEN   ((uint8_t)16)
 #define SD_CMD_SWITCH_FUNC    ((uint8_t)6U)
-
 #define SD_CMD17        ((uint8_t)17)
 #define SD_CMD18        ((uint8_t)18)
-
 #define SD_CMD24        ((uint8_t)24)
 #define SD_CMD25        ((uint8_t)25)
-
 #define SDIO_ACMD41_CHECK            ((uint32_t)0x80000000)
-// Pattern for R6 response
-#define SD_CHECK_PATTERN              ((uint32_t)0x000001AA)
+#define SD_CHECK_PATTERN              ((uint32_t)0x000001AA) // Pattern for R6 response
 
-// SDIO bus width
-#define SD_BUS_1BIT                   0 // 1-bit wide bus (SDIO_D0 used)
-#define SD_BUS_4BIT                   SDMMC_CLKCR_WIDBUS_0 // 4-bit wide bus (SDIO_D[3:0] used)
 #define SDIO_CLK_DIV_INIT      ((uint32_t)0x03C)  // SDIO clock 400kHz  (48MHz / (0x3c * 2) = 400kHz)
-//#define SDIO_CLK_DIV_INIT		(uint32_t)(((((RCC_HSE/RCC_PLL_M)*RCC_PLL_N)/RCC_PLL_Q)/400000) - 2)
 
-// Bitmap to clear the SDIO static flags (command and data)
 #define SDIO_ICR_STATIC     ((uint32_t)(SDMMC_ICR_CCRCFAILC | SDMMC_ICR_DCRCFAILC | SDMMC_ICR_CTIMEOUTC | \
                                         SDMMC_ICR_DTIMEOUTC | SDMMC_ICR_TXUNDERRC | SDMMC_ICR_RXOVERRC  | \
                                         SDMMC_ICR_CMDRENDC  | SDMMC_ICR_CMDSENTC  | SDMMC_ICR_DATAENDC  | \
                                          SDMMC_ICR_DBCKENDC ))
 
-/*
-#define DMA_SDIO_CR			((uint32_t)( (0x04 << DMA_SxCR_CHSEL_Pos) | \
-										 (0x01 << DMA_SxCR_MBURST_Pos)| \
-										 (0x01 << DMA_SxCR_PBURST_Pos)| \
-										 (0x00 << DMA_SxCR_DBM_Pos)   | \
-										 (0x03 << DMA_SxCR_PL_Pos)	  | \
-										 (0x00 << DMA_SxCR_PINCOS_Pos)| \
-										 (0x02 << DMA_SxCR_MSIZE_Pos) | \
-										 (0x02 << DMA_SxCR_PSIZE_Pos) | \
-										 (0x01 << DMA_SxCR_MINC_Pos)  | \
-										 (0x00 << DMA_SxCR_PINC_Pos)  | \
-										 (0x00 << DMA_SxCR_CIRC_Pos)  | \
-										 (0x01 << DMA_SxCR_PFCTRL_Pos)))
-
-
-#define DMA_SDIO_FCR			((uint32_t)  (0x21 | (0 << DMA_SxFCR_FEIE_Pos) | (1 << DMA_SxFCR_DMDIS_Pos) | (3 << DMA_SxFCR_FTH_Pos)))
-#define DMA_S3_CLEAR            ((uint32_t) DMA_LIFCR_CTCIF3 | DMA_LIFCR_CTEIF3 | DMA_LIFCR_CDMEIF3 | DMA_LIFCR_CFEIF3 | DMA_LIFCR_CHTIF3)
-*/
-
-#define SDIO_DCTRL				(uint32_t)((uint32_t)(9 << SDMMC_DCTRL_DBLOCKSIZE_Pos ))
+#define SDIO_DCTRL				(uint32_t)(9 << SDMMC_DCTRL_DBLOCKSIZE_Pos )
 #define SDIO_STA_ERRORS			(uint32_t)(SDMMC_STA_RXOVERR | SDMMC_STA_TXUNDERR | SDMMC_STA_DTIMEOUT | SDMMC_STA_DCRCFAIL )
-#define SDIO_STA_CMD_FLAGS			(uint32_t)(SDMMC_STA_CCRCFAIL|SDMMC_STA_CTIMEOUT|SDMMC_STA_CMDSENT|SDMMC_STA_CMDREND)
-#define SDIO_MASK_ERRORS		(uint32_t)( SDMMC_MASK_RXOVERRIE | SDMMC_MASK_TXUNDERRIE | SDMMC_MASK_DTIMEOUTIE | SDMMC_MASK_DCRCFAILIE  )
-
-#define SDIO_XFER_COMMON_FLAGS  (SDMMC_STA_DTIMEOUT | SDMMC_STA_DCRCFAIL)
-#define SDIO_XFER_ERROR_FLAGS   (SDIO_XFER_COMMON_FLAGS | SDMMC_STA_TXUNDERR | SDMMC_STA_RXOVERR)
-
-
-struct sdio_bckp_type{
-	uint8_t*  buf;
-	uint32_t blk;
-	uint32_t cnt;
-	uint32_t dir;
-};
-
+#define SDIO_STA_CMD_FLAGS		(uint32_t)(SDMMC_STA_CCRCFAIL|SDMMC_STA_CTIMEOUT|SDMMC_STA_CMDSENT|SDMMC_STA_CMDREND)
 
 // SD card description
 typedef struct {

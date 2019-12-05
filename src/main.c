@@ -24,7 +24,7 @@ int main(void){
 		ERROR("f_mount fail: %d",result);
 		while(1);
 		};
-/*
+
 	SEGGER_SYSVIEW_PrintfHost("Open write");
 	result = f_open((FIL*)&file, "test_file.txt", FA_CREATE_ALWAYS | FA_WRITE);
 	if(result != FR_OK) {
@@ -36,9 +36,9 @@ int main(void){
 	data_size=0;
 
 	INFO("Data start: %X end: %X",data,data+DATA_SIZE);
-*/
+
 	/* WRITE_COUNT раз пишет в файл кусками по 70 Кб */
-/*
+
 	SEGGER_SYSVIEW_PrintfHost("Write");
 	for(uint32_t i=0; i<WRITE_COUNT; i++){
 		memset(data,i,DATA_SIZE);
@@ -67,7 +67,7 @@ int main(void){
 	
 	sd_speed = (float)data_size/(float)dwt_get_diff_sec(clk_count);
 	INFO("Write file: %d bytes in %d ms, speed %d Kbyte/sec", data_size, dwt_get_diff_sec(clk_count),(uint32_t)sd_speed);
-*/
+
 	/* Чтение обратно, проверка записанного */
 	SEGGER_SYSVIEW_PrintfHost("Open read");
 	result = f_open((FIL*)&file, "test_file.txt", FA_READ);

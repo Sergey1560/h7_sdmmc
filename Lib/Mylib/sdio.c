@@ -12,9 +12,7 @@ volatile uint8_t state=0;    //Для хранения состояния кар
 volatile uint32_t response[4]; //Для хранения ответа от карты
 volatile uint32_t sta_reg=0;
 
-volatile uint8_t ALGN32 CCCR[512]; 
-
-//volatile uint8_t ALGN4 buf_copy[TMP_BUF_SIZE];
+volatile uint8_t ALGN32 CCCR[64]; 
 
 void SD_parse_CSD(uint32_t* reg){
 	uint32_t tmp;
@@ -39,22 +37,22 @@ uint32_t SD_get_block_count(void){
 
 uint8_t SD_Cmd(uint8_t cmd, uint32_t arg, uint16_t response_type, uint32_t *response){
 
-	SDIO->ICR = SDIO_ICR_STATIC;
-	SDIO->ARG = arg;
-	SDIO->CMD = (uint32_t)(response_type | cmd );
-	SDIO->CMD |= SDMMC_CMD_CPSMEN;
+	SDMMC1->ICR = SDIO_ICR_STATIC;
+	SDMMC1->ARG = arg;
+	SDMMC1->CMD = (uint32_t)(response_type | cmd );
+	SDMMC1->CMD |= SDMMC_CMD_CPSMEN;
 
-	while((SDIO->STA & SDIO_STA_CMD_FLAGS) == 0){__NOP();};
+	while((SDMMC1->STA & SDIO_STA_CMD_FLAGS) == 0){__NOP();};
 
 	if (response_type != SDIO_RESP_NONE) {
-		response[0] =	SDIO->RESP1;
-		response[1] =	SDIO->RESP2;
-		response[2] =	SDIO->RESP3;
-		response[3] =	SDIO->RESP4;
+		response[0] =	SDMMC1->RESP1;
+		response[1] =	SDMMC1->RESP2;
+		response[2] =	SDMMC1->RESP3;
+		response[3] =	SDMMC1->RESP4;
 	}
 	
-	if (SDIO->STA & SDMMC_STA_CTIMEOUT) return 2;
-	if (SDIO->STA & SDMMC_STA_CCRCFAIL) return 3;  
+	if (SDMMC1->STA & SDMMC_STA_CTIMEOUT) return 2;
+	if (SDMMC1->STA & SDMMC_STA_CCRCFAIL) return 3;  
 	return 0;
 }
 
@@ -102,10 +100,10 @@ uint32_t ITCM SD_transfer(uint8_t *buf, uint32_t blk, uint32_t cnt, uint32_t dir
 	
 	SDMMC1->IDMABASE0 = (uint32_t)buf;
 
-	SDIO->DTIMER=(uint32_t)SDIO_DATA_R_TIMEOUT;
-	SDIO->DLEN=cnt*512;    //Количество байт (блок 512 байт)
-	SDIO->DCTRL= SDIO_DCTRL | (dir & SDMMC_DCTRL_DTDIR);  //Direction. 0=Controller to card, 1=Card to Controller
-	SDIO->MASK=0;
+	SDMMC1->DTIMER=(uint32_t)SDIO_DATA_R_TIMEOUT;
+	SDMMC1->DLEN=cnt*512;    //Количество байт (блок 512 байт)
+	SDMMC1->DCTRL= SDIO_DCTRL | (dir & SDMMC_DCTRL_DTDIR);  //Direction. 0=Controller to card, 1=Card to Controller
+	SDMMC1->MASK=0;
 	
 	#ifdef ENABLE_DCACHE 
 	/*
@@ -137,16 +135,16 @@ uint32_t ITCM SD_transfer(uint8_t *buf, uint32_t blk, uint32_t cnt, uint32_t dir
 
 	SD_Cmd(cmd, blk, SDIO_RESP_SHORT, (uint32_t*)response);
 	
-	SDIO->ICR=SDIO_ICR_STATIC;
+	SDMMC1->ICR=SDIO_ICR_STATIC;
 	SDMMC1->IDMACTRL |= 1;
-	SDIO->DCTRL|=1; //DPSM is enabled
+	SDMMC1->DCTRL|=1; //DPSM is enabled
 
-	while((SDIO->STA & (SDMMC_STA_DATAEND|SDIO_STA_ERRORS)) == 0){__NOP();};
+	while((SDMMC1->STA & (SDMMC_STA_DATAEND|SDIO_STA_ERRORS)) == 0){__NOP();};
 
-	if(SDIO->STA & SDIO_STA_ERRORS){
-		error_flag=SDIO->STA;
+	if(SDMMC1->STA & SDIO_STA_ERRORS){
+		error_flag=SDMMC1->STA;
 		transmit=0;
-		SDIO->ICR = SDIO_ICR_STATIC;
+		SDMMC1->ICR = SDIO_ICR_STATIC;
 		return error_flag;
 	}
 
@@ -179,7 +177,7 @@ uint8_t sd_get_cardsize(void){
 
 uint8_t SD_Init(void) {
 	volatile uint32_t trials = 0x0000FFFF;
-	uint32_t tempreg;  
+//	uint32_t tempreg;  
 	uint8_t result = 0;
 	
 	//Тактирование от PLL1 по умолчанию 
@@ -191,8 +189,8 @@ uint8_t SD_Init(void) {
 	for(uint8_t i=0; i<0x10; i++) {__NOP();};
 	RCC->AHB3RSTR &= ~RCC_AHB3RSTR_SDMMC1RST;
 
-	SDIO->CLKCR = SDIO_CLK_DIV_INIT; 
-	SDIO->POWER |= SDMMC_POWER_PWRCTRL;
+	SDMMC1->CLKCR = SDIO_CLK_DIV_INIT; 
+	SDMMC1->POWER |= SDMMC_POWER_PWRCTRL;
 	
 	//Ожидание 74 цикла
 	for(uint32_t i=0; i<0x1000; i++) {__NOP();};
@@ -290,12 +288,10 @@ uint8_t SD_Init(void) {
 			return 5;
 			};    //Убеждаемся, что карта находится в готовности работать с трансфером
 
-		tempreg=((0x01)<<SDMMC_CLKCR_WIDBUS_Pos); 
-		SDIO->CLKCR=tempreg;	
+		SDMMC1->CLKCR=((0x01)<<SDMMC_CLKCR_WIDBUS_Pos);	
 
 		#if (SDIO_HIGH_SPEED != 0)
 			SD_HighSpeed();
-			//SDIO->CLKCR|=(1 << SDMMC_CLKCR_BUSSPEED_Pos);	
 		#endif
 #else
 		tempreg=0;  
@@ -386,10 +382,10 @@ uint8_t SD_CmdSwitch(uint32_t argument, uint8_t *resp) {
 
 	SDMMC1->IDMABASE0 = (uint32_t)resp;
 
-	SDIO->DTIMER=(uint32_t)SDIO_DATA_R_TIMEOUT;
-	SDIO->DLEN=64;
-	SDIO->DCTRL= (6 << SDMMC_DCTRL_DBLOCKSIZE_Pos) | (SD2UM & SDMMC_DCTRL_DTDIR);  //Direction. 0=Controller to card, 1=Card to Controller
-	SDIO->MASK=0;
+	SDMMC1->DTIMER=(uint32_t)SDIO_DATA_R_TIMEOUT;
+	SDMMC1->DLEN=64;
+	SDMMC1->DCTRL= (6 << SDMMC_DCTRL_DBLOCKSIZE_Pos) | (SD2UM & SDMMC_DCTRL_DTDIR);  //Direction. 0=Controller to card, 1=Card to Controller
+	SDMMC1->MASK=0;
 	
 	// #ifdef ENABLE_DCACHE 
 	// SCB_CleanDCache_by_Addr((uint32_t *)resp,64);
@@ -402,16 +398,16 @@ uint8_t SD_CmdSwitch(uint32_t argument, uint8_t *resp) {
 		return res; 
 		}
 
-	SDIO->ICR=SDIO_ICR_STATIC;
+	SDMMC1->ICR=SDIO_ICR_STATIC;
 	SDMMC1->IDMACTRL |= 1;
-	SDIO->DCTRL|=1; //DPSM is enabled
+	SDMMC1->DCTRL|=1; //DPSM is enabled
 
-	while((SDIO->STA & (SDMMC_STA_DATAEND|SDIO_STA_ERRORS)) == 0){__NOP();};
+	while((SDMMC1->STA & (SDMMC_STA_DATAEND|SDIO_STA_ERRORS)) == 0){__NOP();};
 
-	if(SDIO->STA & SDIO_STA_ERRORS){
-		error_flag=SDIO->STA;
+	if(SDMMC1->STA & SDIO_STA_ERRORS){
+		error_flag=SDMMC1->STA;
 		transmit=0;
-		SDIO->ICR = SDIO_ICR_STATIC;
+		SDMMC1->ICR = SDIO_ICR_STATIC;
 		return error_flag;
 	}
 
