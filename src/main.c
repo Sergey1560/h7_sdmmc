@@ -60,7 +60,7 @@ int main(void){
 	}
 	
 	sd_speed = (float)data_size/(float)dwt_get_diff_sec(clk_count);
-	INFO("Write to file done in %d bytes in %d ms, speed %d Kbyte/sec", data_size, dwt_get_diff_sec(clk_count),(uint32_t)sd_speed);
+	INFO("Write file: %d bytes in %d ms, speed %d Kbyte/sec", data_size, dwt_get_diff_sec(clk_count),(uint32_t)sd_speed);
 	/* Чтение обратно, проверка записанного */
 
 	result = f_open((FIL*)&file, "test_file.txt", FA_READ);
@@ -96,8 +96,20 @@ int main(void){
 	}
 	
 	sd_speed = (float)data_size/(float)dwt_get_diff_sec(clk_count);
-	INFO("Read from file done, %d bytes in %d ms, speed %d Kbyte/sec", data_size, dwt_get_diff_sec(clk_count),(uint32_t)sd_speed);
+	INFO("Read file: %d bytes in %d ms, speed %d Kbyte/sec", data_size, dwt_get_diff_sec(clk_count),(uint32_t)sd_speed);
 
+
+	data_size=0;
+	clk_count=dwt_get_tick();
+	for(uint32_t read_data=0; data_size < WRITE_COUNT*DATA_SIZE; read_data++){
+		result = SD_transfer(data,read_data*64,64,SD2UM);
+		if(result){
+			ERROR("RAW Read Error");
+		}
+		data_size+=64*512;
+	}
+	sd_speed = (float)data_size/(float)dwt_get_diff_sec(clk_count);
+	INFO("RAW Read: %d bytes in %d ms, speed %d Kbyte/sec", data_size, dwt_get_diff_sec(clk_count),(uint32_t)sd_speed);
 
 
 
