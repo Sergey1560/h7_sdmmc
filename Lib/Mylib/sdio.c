@@ -384,13 +384,9 @@ uint8_t SD_CmdSwitch(uint32_t argument, uint8_t *resp) {
 
 	SDMMC1->DTIMER=(uint32_t)SDIO_DATA_R_TIMEOUT;
 	SDMMC1->DLEN=64;
-	SDMMC1->DCTRL= (6 << SDMMC_DCTRL_DBLOCKSIZE_Pos) | (SD2UM & SDMMC_DCTRL_DTDIR);  //Direction. 0=Controller to card, 1=Card to Controller
+	SDMMC1->DCTRL= (6 << SDMMC_DCTRL_DBLOCKSIZE_Pos) | (SD2UM & SDMMC_DCTRL_DTDIR);  
 	SDMMC1->MASK=0;
 	
-	// #ifdef ENABLE_DCACHE 
-	// SCB_CleanDCache_by_Addr((uint32_t *)resp,64);
-	// #endif
-
 	res=SD_Cmd(SD_CMD_SWITCH_FUNC, argument, SDIO_RESP_SHORT, (uint32_t*)response); // CMD6
 	
 	if (res != 0) {	
@@ -454,11 +450,6 @@ uint8_t SD_HighSpeed(void) {
 		return 3;
 		}
 
-	// Note: the SD specification says "card shall switch speed mode within 8 clocks
-	// after the end bit of the corresponding response"
-	// Apparently, this is the reason why some SD cards demand a delay between
-	// the request for mode switching and the possibility to continue communication
-	
 	return 0;
 }
 
